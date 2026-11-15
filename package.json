@@ -1,8 +1,17 @@
 {
-  "name": "my-first-extension",
+  "name": "hidemaru-highlighter",
   "displayName": "秀丸風 背景マーカー（ハイライト）",
   "description": "選択範囲や指定した単語に複数色の背景マーカーを付けるVS Code拡張機能",
-  "version": "0.0.1",
+  "version": "0.2.0",
+  "publisher": "local-dev",
+  "license": "MIT",
+  "keywords": [
+    "highlighter",
+    "marker",
+    "hidemaru",
+    "color",
+    "text-marker"
+  ],
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -12,122 +21,212 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "秀丸風 背景マーカー",
+      "properties": {
+        "hidemaruHighlighter.opacity": {
+          "type": "number",
+          "default": 0.4,
+          "minimum": 0.1,
+          "maximum": 1.0,
+          "description": "マーカー背景色の不透明度（0.1: 薄め 〜 1.0: 完全に不透明）"
+        },
+        "hidemaruHighlighter.showStatusBarItem": {
+          "type": "boolean",
+          "default": true,
+          "description": "エディタ右下のステータスバーに現在のファイルのマーカー件数を表示する"
+        }
+      }
+    },
     "commands": [
       {
-        "command": "my-first-extension.colorizeWithMenu",
-        "title": "ハイライト: 単語と色をメニューから選んで塗る..."
+        "command": "hidemaru-highlighter.colorizeWithMenu",
+        "title": "ハイライト: 単語と色をメニューから選んで塗る...",
+        "icon": "$(paintbrush)"
       },
       {
-        "command": "my-first-extension.quickColor.yellow",
+        "command": "hidemaru-highlighter.quickColor.yellow",
         "title": "1発で塗る: 🟡 黄色"
       },
       {
-        "command": "my-first-extension.quickColor.green",
+        "command": "hidemaru-highlighter.quickColor.green",
         "title": "1発で塗る: 🟢 緑色"
       },
       {
-        "command": "my-first-extension.quickColor.cyan",
+        "command": "hidemaru-highlighter.quickColor.cyan",
         "title": "1発で塗る: 🔵 水色"
       },
       {
-        "command": "my-first-extension.quickColor.pink",
+        "command": "hidemaru-highlighter.quickColor.pink",
         "title": "1発で塗る: 🟣 ピンク"
       },
       {
-        "command": "my-first-extension.quickColor.orange",
+        "command": "hidemaru-highlighter.quickColor.orange",
         "title": "1発で塗る: 🟠 オレンジ"
       },
       {
-        "command": "my-first-extension.eraseSelection",
+        "command": "hidemaru-highlighter.eraseSelection",
         "title": "ハイライト: 選択範囲の背景色を消す（消しゴム）"
       },
       {
-        "command": "my-first-extension.clearAllColors",
-        "title": "ハイライト: すべての背景色をクリア"
+        "command": "hidemaru-highlighter.jumpToNext",
+        "title": "ハイライト: 次のマーカーへジャンプ"
+      },
+      {
+        "command": "hidemaru-highlighter.jumpToPrev",
+        "title": "ハイライト: 前のマーカーへジャンプ"
+      },
+      {
+        "command": "hidemaru-highlighter.listHighlights",
+        "title": "ハイライト: マーカー一覧を表示・ジャンプ..."
+      },
+      {
+        "command": "hidemaru-highlighter.clearSpecificColor",
+        "title": "ハイライト: 指定した色のマーカーを一括消去..."
+      },
+      {
+        "command": "hidemaru-highlighter.clearCurrentColors",
+        "title": "ハイライト: このファイルの背景色をクリア"
+      },
+      {
+        "command": "hidemaru-highlighter.clearAllColors",
+        "title": "ハイライト: すべてのファイルの背景色をクリア"
       }
     ],
     "submenus": [
       {
-        "id": "my-first-extension.quickColorSubmenu",
+        "id": "hidemaru-highlighter.quickColorSubmenu",
         "label": "🎨 背景マーカー（色付け）"
       }
     ],
     "menus": {
+      "editor/title": [
+        {
+          "command": "hidemaru-highlighter.colorizeWithMenu",
+          "group": "navigation",
+          "when": "editorTextFocus"
+        }
+      ],
       "editor/context": [
         {
-          "submenu": "my-first-extension.quickColorSubmenu",
+          "submenu": "hidemaru-highlighter.quickColorSubmenu",
           "group": "navigation@1"
         }
       ],
-      "my-first-extension.quickColorSubmenu": [
+      "hidemaru-highlighter.quickColorSubmenu": [
         {
-          "command": "my-first-extension.quickColor.yellow",
+          "command": "hidemaru-highlighter.quickColor.yellow",
           "group": "1_quick@1"
         },
         {
-          "command": "my-first-extension.quickColor.green",
+          "command": "hidemaru-highlighter.quickColor.green",
           "group": "1_quick@2"
         },
         {
-          "command": "my-first-extension.quickColor.cyan",
+          "command": "hidemaru-highlighter.quickColor.cyan",
           "group": "1_quick@3"
         },
         {
-          "command": "my-first-extension.quickColor.pink",
+          "command": "hidemaru-highlighter.quickColor.pink",
           "group": "1_quick@4"
         },
         {
-          "command": "my-first-extension.quickColor.orange",
+          "command": "hidemaru-highlighter.quickColor.orange",
           "group": "1_quick@5"
         },
         {
-          "command": "my-first-extension.colorizeWithMenu",
+          "command": "hidemaru-highlighter.colorizeWithMenu",
           "group": "2_menu@1"
         },
         {
-          "command": "my-first-extension.eraseSelection",
+          "command": "hidemaru-highlighter.listHighlights",
+          "group": "2_nav@0"
+        },
+        {
+          "command": "hidemaru-highlighter.jumpToNext",
+          "group": "2_nav@1"
+        },
+        {
+          "command": "hidemaru-highlighter.jumpToPrev",
+          "group": "2_nav@2"
+        },
+        {
+          "command": "hidemaru-highlighter.eraseSelection",
           "group": "3_erase@1"
         },
         {
-          "command": "my-first-extension.clearAllColors",
+          "command": "hidemaru-highlighter.clearSpecificColor",
           "group": "3_erase@2"
+        },
+        {
+          "command": "hidemaru-highlighter.clearCurrentColors",
+          "group": "3_erase@3"
+        },
+        {
+          "command": "hidemaru-highlighter.clearAllColors",
+          "group": "3_erase@4"
         }
       ]
     },
     "keybindings": [
       {
-        "command": "my-first-extension.colorizeWithMenu",
+        "command": "hidemaru-highlighter.colorizeWithMenu",
         "key": "alt+m",
+        "mac": "cmd+alt+m",
         "when": "editorTextFocus"
       },
       {
-        "command": "my-first-extension.quickColor.yellow",
+        "command": "hidemaru-highlighter.quickColor.yellow",
         "key": "alt+1",
+        "mac": "cmd+alt+1",
         "when": "editorTextFocus"
       },
       {
-        "command": "my-first-extension.quickColor.green",
+        "command": "hidemaru-highlighter.quickColor.green",
         "key": "alt+2",
+        "mac": "cmd+alt+2",
         "when": "editorTextFocus"
       },
       {
-        "command": "my-first-extension.quickColor.cyan",
+        "command": "hidemaru-highlighter.quickColor.cyan",
         "key": "alt+3",
+        "mac": "cmd+alt+3",
         "when": "editorTextFocus"
       },
       {
-        "command": "my-first-extension.quickColor.pink",
+        "command": "hidemaru-highlighter.quickColor.pink",
         "key": "alt+4",
+        "mac": "cmd+alt+4",
         "when": "editorTextFocus"
       },
       {
-        "command": "my-first-extension.quickColor.orange",
+        "command": "hidemaru-highlighter.quickColor.orange",
         "key": "alt+5",
+        "mac": "cmd+alt+5",
         "when": "editorTextFocus"
       },
       {
-        "command": "my-first-extension.eraseSelection",
+        "command": "hidemaru-highlighter.eraseSelection",
         "key": "alt+0",
+        "mac": "cmd+alt+0",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "hidemaru-highlighter.jumpToNext",
+        "key": "alt+]",
+        "mac": "cmd+alt+]",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "hidemaru-highlighter.jumpToPrev",
+        "key": "alt+[",
+        "mac": "cmd+alt+[",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "hidemaru-highlighter.listHighlights",
+        "key": "alt+l",
+        "mac": "cmd+alt+l",
         "when": "editorTextFocus"
       }
     ]
@@ -135,7 +234,8 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
+    "watch": "tsc -watch -p ./",
+    "package": "npx @vscode/vsce package"
   },
   "devDependencies": {
     "@types/node": "18.x",
