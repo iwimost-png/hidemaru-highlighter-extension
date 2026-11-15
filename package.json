@@ -1,0 +1,145 @@
+{
+  "name": "my-first-extension",
+  "displayName": "秀丸風 背景マーカー（ハイライト）",
+  "description": "選択範囲や指定した単語に複数色の背景マーカーを付けるVS Code拡張機能",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "my-first-extension.colorizeWithMenu",
+        "title": "ハイライト: 単語と色をメニューから選んで塗る..."
+      },
+      {
+        "command": "my-first-extension.quickColor.yellow",
+        "title": "1発で塗る: 🟡 黄色"
+      },
+      {
+        "command": "my-first-extension.quickColor.green",
+        "title": "1発で塗る: 🟢 緑色"
+      },
+      {
+        "command": "my-first-extension.quickColor.cyan",
+        "title": "1発で塗る: 🔵 水色"
+      },
+      {
+        "command": "my-first-extension.quickColor.pink",
+        "title": "1発で塗る: 🟣 ピンク"
+      },
+      {
+        "command": "my-first-extension.quickColor.orange",
+        "title": "1発で塗る: 🟠 オレンジ"
+      },
+      {
+        "command": "my-first-extension.eraseSelection",
+        "title": "ハイライト: 選択範囲の背景色を消す（消しゴム）"
+      },
+      {
+        "command": "my-first-extension.clearAllColors",
+        "title": "ハイライト: すべての背景色をクリア"
+      }
+    ],
+    "submenus": [
+      {
+        "id": "my-first-extension.quickColorSubmenu",
+        "label": "🎨 背景マーカー（色付け）"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "submenu": "my-first-extension.quickColorSubmenu",
+          "group": "navigation@1"
+        }
+      ],
+      "my-first-extension.quickColorSubmenu": [
+        {
+          "command": "my-first-extension.quickColor.yellow",
+          "group": "1_quick@1"
+        },
+        {
+          "command": "my-first-extension.quickColor.green",
+          "group": "1_quick@2"
+        },
+        {
+          "command": "my-first-extension.quickColor.cyan",
+          "group": "1_quick@3"
+        },
+        {
+          "command": "my-first-extension.quickColor.pink",
+          "group": "1_quick@4"
+        },
+        {
+          "command": "my-first-extension.quickColor.orange",
+          "group": "1_quick@5"
+        },
+        {
+          "command": "my-first-extension.colorizeWithMenu",
+          "group": "2_menu@1"
+        },
+        {
+          "command": "my-first-extension.eraseSelection",
+          "group": "3_erase@1"
+        },
+        {
+          "command": "my-first-extension.clearAllColors",
+          "group": "3_erase@2"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "my-first-extension.colorizeWithMenu",
+        "key": "alt+m",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "my-first-extension.quickColor.yellow",
+        "key": "alt+1",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "my-first-extension.quickColor.green",
+        "key": "alt+2",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "my-first-extension.quickColor.cyan",
+        "key": "alt+3",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "my-first-extension.quickColor.pink",
+        "key": "alt+4",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "my-first-extension.quickColor.orange",
+        "key": "alt+5",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "my-first-extension.eraseSelection",
+        "key": "alt+0",
+        "when": "editorTextFocus"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "18.x",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.2"
+  }
+}
