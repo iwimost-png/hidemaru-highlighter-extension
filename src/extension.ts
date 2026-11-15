@@ -31,6 +31,9 @@ const decorationTypes = new Map<string, vscode.TextEditorDecorationType>();
 // colorKey は 'yellow' 等のプリセットキー、または '#ff0000' などのカスタム色コード
 const documentHighlightMap = new Map<string, Map<string, HighlightRange[]>>();
 
+// 直前の全消去バックアップ（Undo復元用）: docKey -> colorMap
+const undoClearBackupMap = new Map<string, Map<string, HighlightRange[]>>();
+
 // 拡張機能コンテキストの参照（deactivate時のフラッシュ保存用）
 let extensionContext: vscode.ExtensionContext | undefined;
 
@@ -641,6 +644,50 @@ async function clearSpecificColor(editor: vscode.TextEditor, context: vscode.Ext
   vscode.window.setStatusBarMessage(`「${selected.label}」のマーカー（${selected.count}箇所）を消去しました。`, 3000);
 }
 
+/**
+ * 現在のファイルのマーカーを全消去（Undo復元機能付き）
+ */
+function clearCurrentDocumentColors(editor: vscode.TextEditor, context: vscode.ExtensionContext) {
+  const docKey = editor.document.uri.toString();
+  const colorMap = documentHighlightMap.get(docKey);
+  if (!colorMap || colorMap.size === 0) {
+    vscode.window.setStatusBarMessage('消去するハイライトがありません。', 2000);
+    return;
+  }
+
+  let totalCount = 0;
+  colorMap.forEach(ranges => totalCount += ranges.length);
+
+  // Undo復元用にバックアップを作成
+  const backup = new Map<string, HighlightRange[]>();
+  colorMap.forEach((ranges, key) => {
+    backup.set(key, [...ranges]);
+  });
+  undoClearBackupMap.set(docKey, backup);
+
+  // マーカーをクリア
+  documentHighlightMap.delete(docKey);
+  renderDecorations(editor.document);
+  saveHighlights(context);
+
+  // 「元に戻す」アクション付きの通知を表示
+  vscode.window.showInformationMessage(
+    `このファイルのマーカー（全${totalCount}箇所）を消去しました。`,
+    '元に戻す (Undo)'
+  ).then(action => {
+    if (action === '元に戻す (Undo)') {
+      const restored = undoClearBackupMap.get(docKey);
+      if (restored) {
+        documentHighlightMap.set(docKey, restored);
+        undoClearBackupMap.delete(docKey);
+        renderDecorations(editor.document);
+        saveHighlights(context);
+        vscode.window.setStatusBarMessage('マーカーを元に戻しました。', 2500);
+      }
+    }
+  });
+}
+
 export function activate(context: vscode.ExtensionContext) {
   extensionContext = context;
 
@@ -769,13 +816,20 @@ export function activate(context: vscode.ExtensionContext) {
   };
 
   // =========================================================================
-  // 機能1：メニューUI（単語と色を選択して塗る）
+  // 機能1：メニューUI（単語と色を選択して塗る / 全件消去もここから実行可能）
   // =========================================================================
   registerCommand('colorizeWithMenu', async () => {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
       vscode.window.showInformationMessage('エディタが開かれていません。テキストファイルを開いてから実行してください。');
       return;
+    }
+
+    const docKey = editor.document.uri.toString();
+    const colorMap = documentHighlightMap.get(docKey);
+    let currentDocMarkerCount = 0;
+    if (colorMap) {
+      colorMap.forEach(ranges => currentDocMarkerCount += ranges.length);
     }
 
     const selection = editor.selection;
@@ -785,7 +839,7 @@ export function activate(context: vscode.ExtensionContext) {
     const isAsciiWord = /^\w+$/.test(currentWord);
 
     interface ModeItem extends vscode.QuickPickItem {
-      mode: 'selection' | 'all_current_word' | 'all_current_exact' | 'all_current_ignore_case' | 'input_word';
+      mode: 'selection' | 'all_current_word' | 'all_current_exact' | 'all_current_ignore_case' | 'input_word' | 'clear_current' | 'clear_specific' | 'clear_all';
     }
     const modeItems: ModeItem[] = [];
 
@@ -823,11 +877,58 @@ export function activate(context: vscode.ExtensionContext) {
       mode: 'input_word'
     });
 
+    // 消去関連メニューの追加
+    if (currentDocMarkerCount > 0) {
+      modeItems.push({
+        label: `$(clear-all) 🧹 このファイルのマーカーを全消去 (${currentDocMarkerCount}箇所)`,
+        description: '現在開いているファイルのすべてのマーカーを消去 (Shift+Alt+0 / Alt+C)',
+        mode: 'clear_current'
+      });
+      modeItems.push({
+        label: `$(symbol-color) 🎨 指定した色のマーカーを一括消去...`,
+        description: '特定の色（例: 黄色だけ）を選んで消去',
+        mode: 'clear_specific'
+      });
+    }
+    if (documentHighlightMap.size > 0) {
+      modeItems.push({
+        label: `$(trash) 🗑️ すべてのファイルのマーカーを全消去...`,
+        description: '全ファイルのすべてのマーカーを消去',
+        mode: 'clear_all'
+      });
+    }
+
     const selectedMode = await vscode.window.showQuickPick(modeItems, {
-      title: 'ステップ 1/2: 塗る対象を選択',
-      placeHolder: 'どこに色を付けますか？'
+      title: 'ステップ 1/2: 塗る対象（または消去）を選択',
+      placeHolder: 'どこに色を付けますか？ またはマーカーを消去しますか？'
     });
     if (!selectedMode) {
+      return;
+    }
+
+    // 消去モードが選ばれた場合は直ちに実行
+    if (selectedMode.mode === 'clear_current') {
+      clearCurrentDocumentColors(editor, context);
+      return;
+    }
+    if (selectedMode.mode === 'clear_specific') {
+      clearSpecificColor(editor, context);
+      return;
+    }
+    if (selectedMode.mode === 'clear_all') {
+      const answer = await vscode.window.showWarningMessage(
+        'すべてのファイルのマーカーを全消去しますか？',
+        { modal: true },
+        '全消去する'
+      );
+      if (answer === '全消去する') {
+        documentHighlightMap.clear();
+        for (const ed of vscode.window.visibleTextEditors) {
+          renderDecorations(ed.document);
+        }
+        saveHighlights(context);
+        vscode.window.setStatusBarMessage('すべてのファイルのハイライトをクリアしました。', 2500);
+      }
       return;
     }
 
@@ -1022,7 +1123,7 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   // =========================================================================
-  // 機能5：背景色クリア（指定色 / このファイル / 全ファイル）
+  // 機能5：背景色クリア（指定色 / このファイル全消去 / 全ファイル全消去）
   // =========================================================================
   registerCommand('clearSpecificColor', () => {
     const editor = vscode.window.activeTextEditor;
@@ -1031,18 +1132,15 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
+  // このファイルのマーカーを全消去（Shift + Alt + 0 / Alt + C）
   registerCommand('clearCurrentColors', () => {
     const editor = vscode.window.activeTextEditor;
-    if (!editor) {
-      return;
+    if (editor) {
+      clearCurrentDocumentColors(editor, context);
     }
-    const docKey = editor.document.uri.toString();
-    documentHighlightMap.delete(docKey);
-    renderDecorations(editor.document);
-    saveHighlights(context);
-    vscode.window.setStatusBarMessage('このファイルのハイライトをクリアしました。', 2500);
   });
 
+  // すべてのファイルのマーカーを全消去
   registerCommand('clearAllColors', () => {
     documentHighlightMap.clear();
     for (const editor of vscode.window.visibleTextEditors) {
@@ -1073,4 +1171,5 @@ export function deactivate() {
   decorationTypes.forEach(decType => decType.dispose());
   decorationTypes.clear();
   documentHighlightMap.clear();
+  undoClearBackupMap.clear();
 }

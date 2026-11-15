@@ -2,7 +2,7 @@
   "name": "hidemaru-highlighter",
   "displayName": "秀丸風 背景マーカー（ハイライト）",
   "description": "選択範囲や指定した単語に複数色の背景マーカーを付けるVS Code拡張機能",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "local-dev",
   "license": "MIT",
   "keywords": [
@@ -86,11 +86,11 @@
       },
       {
         "command": "hidemaru-highlighter.clearCurrentColors",
-        "title": "ハイライト: このファイルの背景色をクリア"
+        "title": "ハイライト: このファイルのマーカーを全消去"
       },
       {
         "command": "hidemaru-highlighter.clearAllColors",
-        "title": "ハイライト: すべてのファイルの背景色をクリア"
+        "title": "ハイライト: すべてのファイルのマーカーを全消去"
       }
     ],
     "submenus": [
@@ -209,6 +209,18 @@
         "command": "hidemaru-highlighter.eraseSelection",
         "key": "alt+0",
         "mac": "cmd+alt+0",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "hidemaru-highlighter.clearCurrentColors",
+        "key": "shift+alt+0",
+        "mac": "shift+cmd+alt+0",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "hidemaru-highlighter.clearCurrentColors",
+        "key": "alt+c",
+        "mac": "cmd+alt+c",
         "when": "editorTextFocus"
       },
       {
